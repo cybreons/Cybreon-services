@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Services - Cybreon - Your Digital Brain</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --silver-grey: #c5ccd5;
+            --dark-grey: #2d2f33;
+            --muted-grey: #a0a4a9;
+            --neon-blue: #00ddeb;
+            --black-bg: #0a0a0a;
+            --darker-bg: #050505;
+            --glass-bg: rgba(197, 204, 213, 0.05);
+            --glass-border: rgba(197, 204, 213, 0.1);
+            --grid-size: 40px;
+        }
+
+        @font-face {
+            font-family: 'Space Grotesk';
+            src: url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        body {
+            background-color: var(--black-bg);
+            color: var(--muted-grey);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #neuralCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.8;
+            touch-action: none;
+        }
+
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: radial-gradient(circle at center, transparent 60%, rgba(45, 47, 51, 0.2) 100%);
+            z-index: 1;
+            opacity: 0.5;
+            animation: scanline 8s linear infinite;
+        }
+
+        .grid {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(var(--glass-border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--glass-border) 1px, transparent 1px);
+            background-size: var(--grid-size) var(--grid-size);
+            z-index: 1;
+            opacity: 0.2;
+            pointer-events: none;
+            animation: gridFlicker 3s ease-in-out infinite;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 15px;
+            position: relative;
+            z-index: 2;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(5, 5, 5, 0.9);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 204, 213, 0.1);
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            text-decoration: none;
+            perspective: 500px;
+        }
+
+        .logo img {
+            width: 45px;
+            height: 45px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(197, 204, 213, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .logo:hover img {
+            transform: rotateY(10deg) scale(1.05);
+            box-shadow: 0 0 25px rgba(0, 221, 235, 0.5);
+        }
+
+        .logo-text {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--silver-grey);
+            text-shadow: 0 0 8px rgba(197, 204, 213, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .logo:hover .logo-text {
+            text-shadow: 0 0 15px rgba(0, 221, 235, 0.8);
+            animation: glitch 0.5s ease-in-out;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 0.8rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--muted-grey);
+            text-decoration: none;
+            font-size: 1rem;
+            padding: 0.4rem 0.8rem;
+            transition: all 0.3s ease;
+            background: rgba(197, 204, 213, 0.1);
+            border-radius: 4px;
+            touch-action: manipulation;
+        }
+
+        .nav-links a:hover {
+            background: rgba(0, 221, 235, 0.2);
+            color: var(--silver-grey);
+            transform: translateY(-2px);
+        }
+
+        .services-section {
+            min-height: 100vh;
+            padding: 6rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .services-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--silver-grey), var(--dark-grey));
+            background-size: 400%;
+            opacity: 0.15;
+            animation: gradientShift 15s ease infinite;
+            z-index: -1;
+        }
+
+        .services-content {
+            flex: 1;
+            padding: 2rem;
+            position: relative;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            backdrop-filter: blur(8px);
+            animation: fadeIn 1s ease-out;
+        }
+
+        .services-content h1 {
+            font-size: 3rem;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            color: var(--silver-grey);
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 8px rgba(197, 204, 213, 0.6);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        .services-content h2 {
+            font-size: 1.8rem;
+            color: var(--silver-grey);
+            margin-bottom: 1rem;
+            text-shadow: 0 0 8px rgba(197, 204, 213, 0.4);
+        }
+
+        .services-content h3 {
+            font-size: 1.4rem;
+            color: var(--silver-grey);
+            margin-bottom: 1rem;
+        }
+
+        .services-content p {
+            font-size: 1.1rem;
+            color: var(--muted-grey);
+            margin-bottom: 1.5rem;
+            max-width: 800px;
+        }
+
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .service-item {
+            padding: 1.5rem;
+            background: rgba(197, 204, 213, 0.1);
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .service-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 20px rgba(0, 221, 235, 0.3);
+        }
+
+        .service-item ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .service-item li {
+            font-size: 1rem;
+            color: var(--muted-grey);
+            margin-bottom: 0.8rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .service-item li::before {
+            content: '➤';
+            color: var(--neon-blue);
+            position: absolute;
+            left: 0;
+        }
+
+        .use-cases, .ideal-for, .in-development {
+            margin-top: 1rem;
+        }
+
+        .use-cases p, .ideal-for p, .in-development p {
+            font-size: 1rem;
+            color: var(--muted-grey);
+        }
+
+        .btn {
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            border: none;
+            background: linear-gradient(45deg, var(--silver-grey), var(--dark-grey));
+            color: white;
+            border-radius: 25px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            touch-action: manipulation;
+            border: 1px solid var(--neon-blue);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(0, 221, 235, 0.1);
+            transform: rotate(45deg);
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover::before {
+            transform: rotate(45deg) translate(50%, 50%);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 25px rgba(0, 221, 235, 0.3);
+            color: var(--neon-blue);
+        }
+
+        /* Unique Feature: Interactive Service Cards */
+        .service-item.active {
+            background: rgba(0, 221, 235, 0.2);
+            border: 1px solid var(--neon-blue);
+            box-shadow: 0 0 25px rgba(0, 221, 235, 0.5);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes glow {
+            0% { text-shadow: 0 0 8px rgba(197, 204, 213, 0.6), 0 0 15px rgba(197, 204, 213, 0.4); }
+            100% { text-shadow: 0 0 12px rgba(197, 204, 213, 0.8), 0 0 20px rgba(197, 204, 213, 0.6); }
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes scanline {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100px; }
+        }
+
+        @keyframes gridFlicker {
+            0% { opacity: 0.2; }
+            50% { opacity: 0.15; }
+            100% { opacity: 0.2; }
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        @media (max-width: 768px) {
+            .services-content h1 { font-size: 2.5rem; }
+            .services-section { padding: 4rem 0; }
+            .nav-links { display: none; }
+            .logo img { width: 35px; height: 35px; }
+            .logo-text { font-size: 1.4rem; }
+            .btn { padding: 0.6rem 1.5rem; font-size: 1rem; }
+            .services-content p { font-size: 0.95rem; }
+            .service-item { min-width: 100%; }
+        }
+
+        @media (max-width: 480px) {
+            .services-content h1 { font-size: 2rem; }
+            .container { padding: 0 10px; }
+            .logo-text { font-size: 1.2rem; }
+            .btn { font-size: 0.95rem; }
+            .service-item h3 { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="neuralCanvas"></canvas>
+    <div class="vignette"></div>
+    <div class="grid"></div>
+
+    <nav>
+        <div class="container">
+            <a href="index.html" class="logo">
+                <img src="https://raw.githubusercontent.com/Sujaltalreja04/Cybreon-2/refs/heads/main/X.jpg" alt="Cybreon Logo">
+                <span class="logo-text">Cybreon</span>
+            </a>
+            <div class="nav-links">
+                <a href="about.html">About Us</a>
+                <a href="#services">Services</a>
+                <a href="#blogs">Blogs</a>
+                <a href="#future">Future Vision</a>
+                <a href="#contact">Contact Us</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="services-section" id="services">
+        <div class="container">
+            <div class="services-content">
+                <h1>🔧 Our Services</h1>
+                <h2>Powering the Next Generation of Intelligent Systems</h2>
+                <p>At Cybreon, our mission is to make your device smarter, more responsive, and deeply personalized. We specialize in building intelligent assistants that live on your system, learn from you, and evolve with your workflow. Below is a detailed breakdown of our core services:</p>
+
+                <div class="service-grid">
+                    <div class="service-item">
+                        <h3>🤖 Custom System Assistant Integration</h3>
+                        <p>🧠 Personalized AI Assistant for Your Device</p>
+                        <p>Cybreon becomes the digital brain of your system, transforming how you interact with your files, applications, and operating system.</p>
+                        <div class="use-cases">
+                            <p><strong>What We Offer:</strong></p>
+                            <ul>
+                                <li>🔹 Full system access via conversational AI</li>
+                                <li>🔹 Voice & text command support</li>
+                                <li>🔹 Seamless control over files, folders, apps, and web browsing</li>
+                                <li>🔹 Adaptive learning: remembers your patterns and customizes responses</li>
+                                <li>🔹 Offline processing for privacy & performance</li>
+                                <li>🔹 Easily extendable with new skills (like opening design software, searching your codebase, or sending emails)</li>
+                            </ul>
+                            <p><strong>Perfect for:</strong> Developers, creators, professionals, and students who want to automate tasks and control their environment effortlessly.</p>
+                        </div>
+                    </div>
+
+                    <div class="service-item">
+                        <h3>⚙️ Intelligent Automation Workflows</h3>
+                        <p>🔄 Automate Anything. Save Time. Do More.</p>
+                        <p>Cybreon allows you to set up custom automations without coding—whether it's scheduling a task, backing up files, or triggering actions based on events.</p>
+                        <div class="use-cases">
+                            <p><strong>What We Offer:</strong></p>
+                            <ul>
+                                <li>🔹 No-code automation builder</li>
+                                <li>🔹 Event-based triggers (file changes, voice commands, system events)</li>
+                                <li>🔹 Daily task scheduling and system cleanup</li>
+                                <li>🔹 Custom script execution with AI support</li>
+                                <li>🔹 Integration with local databases, APIs, and third-party tools</li>
+                            </ul>
+                            <p><strong>Use Cases:</strong></p>
+                            <ul>
+                                <li>Automating morning routines (open apps, check files)</li>
+                                <li>Sending daily reports or data summaries</li>
+                                <li>Running a backup and cleanup every Friday</li>
+                                <li>Triggering actions when a new file is added or modified</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="service-item">
+                        <h3>📊 AI-Powered Data Understanding</h3>
+                        <p>📈 Turn Raw Data into Instant Visual Intelligence</p>
+                        <p>Cybreon reads and understands your data files and automatically generates smart insights and visuals.</p>
+                        <div class="use-cases">
+                            <p><strong>What We Offer:</strong></p>
+                            <ul>
+                                <li>🔹 Upload CSV, TXT, Excel, or PDF data</li>
+                                <li>🔹 Instant detection of data types (categorical, numerical)</li>
+                                <li>🔹 Auto-generated graphs (bar, pie, histogram, line, scatter)</li>
+                                <li>🔹 AI-powered explanations of trends and insights</li>
+                                <li>🔹 Exportable data reports with charts and descriptions</li>
+                            </ul>
+                            <p><strong>Ideal For:</strong> Students doing research, Analysts or business users generating quick insights, Anyone working with structured data daily</p>
+                        </div>
+                    </div>
+
+                    <div class="service-item">
+                        <h3>📄 Document & OCR Intelligence</h3>
+                        <p>📃 Understand Scanned, Handwritten, or Legacy Files</p>
+                        <p>Don’t just read your documents—decode them intelligently with Cybreon.</p>
+                        <div class="use-cases">
+                            <p><strong>What We Offer:</strong></p>
+                            <ul>
+                                <li>🔹 OCR from images, scanned PDFs, and screenshots</li>
+                                <li>🔹 Automatic text extraction</li>
+                                <li>🔹 Language translation and summarization</li>
+                                <li>🔹 Contextual interpretation using local AI</li>
+                                <li>🔹 Exports in editable formats</li>
+                            </ul>
+                            <p><strong>Great For:</strong> Digitizing old notes or forms, Translating printed material, Quickly understanding lengthy documents</p>
+                        </div>
+                    </div>
+
+                    <div class="service-item">
+                        <h3>📚 Productivity & AI Study Tools</h3>
+                        <p>📅 Study Smarter. Work Better. Stay on Track.</p>
+                        <p>Cybreon helps students and professionals plan better, stay consistent, and reach their goals faster.</p>
+                        <div class="use-cases">
+                            <p><strong>What We Offer:</strong></p>
+                            <ul>
+                                <li>🔹 AI-based study planner with customizable subjects and topics</li>
+                                <li>🔹 Smart time-table generation with memory-based optimization</li>
+                                <li>🔹 To-do management and reminder system</li>
+                                <li>🔹 Progress tracking with visual dashboards</li>
+                                <li>🔹 Personalized suggestions based on workload and pace</li>
+                            </ul>
+                            <p><strong>Use Cases:</strong></p>
+                            <ul>
+                                <li>Students preparing for exams</li>
+                                <li>Self-learners and online course participants</li>
+                                <li>Busy professionals juggling multiple tasks</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="service-item">
+                        <h3>🔬 Future Vision: AI-on-Chip System (Coming Soon)</h3>
+                        <p>🧩 Turning Cybreon Into a Hardware Brain</p>
+                        <p>We are actively researching how to convert Cybreon into a compact PCB chip that can be embedded into any system—offline, powerful, and plug-and-play.</p>
+                        <div class="in-development">
+                            <p><strong>In Development:</strong></p>
+                            <ul>
+                                <li>🔹 On-device AI processing</li>
+                                <li>🔹 Control over hardware-level operations (robots, sensors, smart systems)</li>
+                                <li>🔹 Replace cloud-based assistants with local Cybreon brain</li>
+                                <li>🔹 Suitable for smart devices, robotics, IoT, and autonomous systems</li>
+                            </ul>
+                            <p>This will allow Cybreon to power intelligent agents, drones, or home assistants—without internet dependency.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h2>🧠 Want to Supercharge Your System with Intelligence?</h2>
+                <p>Let Cybreon work for you, think with you, and grow beside you.</p>
+                <p>📩 Contact us for:</p>
+                <ul>
+                    <li>Custom assistant builds</li>
+                    <li>Integration into your product</li>
+                    <li>Enterprise-level deployment</li>
+                    <li>Beta testing and partnerships</li>
+                </ul>
+                <button class="btn" style="margin-top: 2rem;">Get in Touch</button>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const nodeCount = isMobile ? 200 : 400;
+        const connectionCount = isMobile ? 600 : 1200;
+        const particleCount = isMobile ? 150 : 300;
+        const pulseFrequency = isMobile ? 600 : 300;
+
+        const canvas = document.getElementById('neuralCanvas');
+        console.log('Canvas element:', canvas); // Debugging line
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !isMobile });
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
+
+        camera.position.z = isMobile ? 120 : 100;
+
+        const nodes = [];
+        const nodeGeometry = new THREE.SphereGeometry(isMobile ? 0.5 : 0.6, 12, 12);
+        const nodeMaterial = new THREE.MeshBasicMaterial({
+            color: 0xc5ccd5,
+            transparent: true,
+            opacity: 0.6
+        });
+
+        for (let i = 0; i < nodeCount; i++) {
+            const node = new THREE.Mesh(nodeGeometry, nodeMaterial);
+            node.position.set(
+                (Math.random() - 0.5) * (isMobile ? 400 : 600),
+                (Math.random() - 0.5) * (isMobile ? 400 : 600),
+                (Math.random() - 0.5) * (isMobile ? 200 : 300)
+            );
+            node.baseOpacity = 0.6;
+            node.distortion = Math.random() * 0.1;
+            nodes.push(node);
+            scene.add(node);
+        }
+        console.log('Nodes created:', nodes.length); // Debugging line
+
+        const connections = [];
+        const connectionMaterial = new THREE.LineBasicMaterial({
+            color: 0xc5ccd5,
+            transparent: true,
+            opacity: 0.3,
+            linewidth: isMobile ? 1.5 : 2
+        });
+
+        for (let i = 0; i < connectionCount; i++) {
+            const node1 = nodes[Math.floor(Math.random() * nodes.length)];
+            const node2 = nodes[Math.floor(Math.random() * nodes.length)];
+            if (node1 !== node2) {
+                const geometry = new THREE.BufferGeometry().setFromPoints([
+                    node1.position,
+                    node2.position
+                ]);
+                const line = new THREE.Line(geometry, connectionMaterial);
+                connections.push(line);
+                scene.add(line);
+            }
+        }
+        console.log('Connections created:', connections.length); // Debugging line
+
+        const pulseGeometry = new THREE.SphereGeometry(isMobile ? 0.4 : 0.5, 8, 8);
+        const pulseMaterialSilver = new THREE.MeshBasicMaterial({
+            color: 0xc5ccd5,
+            transparent: true,
+            opacity: 0.8
+        });
+        const pulseMaterialBlue = new THREE.MeshBasicMaterial({
+            color: 0x00ddeb,
+            transparent: true,
+            opacity: 0.8
+        });
+        const pulses = [];
+
+        function createPulse(startNode, endNode) {
+            const useBlue = Math.random() < 0.2;
+            const pulse = new THREE.Mesh(pulseGeometry, useBlue ? pulseMaterialBlue : pulseMaterialSilver);
+            pulse.position.copy(startNode.position);
+            pulse.startPos = startNode.position.clone();
+            pulse.endPos = endNode.position.clone();
+            pulse.progress = 0;
+            pulse.speed = Math.random() * 0.02 + 0.015;
+            scene.add(pulse);
+            pulses.push(pulse);
+        }
+
+        setInterval(() => {
+            const node1 = nodes[Math.floor(Math.random() * nodes.length)];
+            const node2 = nodes[Math.floor(Math.random() * nodes.length)];
+            if (node1 !== node2) {
+                createPulse(node1, node2);
+            }
+        }, pulseFrequency);
+
+        const glowMaterial = new THREE.PointsMaterial({
+            color: 0xc5ccd5,
+            size: isMobile ? 0.8 : 1.0,
+            transparent: true,
+            opacity: 0.7
+        });
+
+        const glowParticles = [];
+        for (let i = 0; i < particleCount; i++) {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(3);
+            positions[0] = (Math.random() - 0.5) * (isMobile ? 400 : 600);
+            positions[1] = (Math.random() - 0.5) * (isMobile ? 400 : 600);
+            positions[2] = (Math.random() - 0.5) * (isMobile ? 200 : 300);
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const particle = new THREE.Points(geometry, glowMaterial);
+            glowParticles.push(particle);
+            scene.add(particle);
+        }
+        console.log('Glow particles created:', glowParticles.length); // Debugging line
+
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+
+        function updatePointer(event) {
+            const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+            const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+            pointer.x = (clientX / window.innerWidth) * 2 - 1;
+            pointer.y = -(clientY / window.innerHeight) * 2 + 1;
+        }
+
+        if (!isMobile) {
+            window.addEventListener('mousemove', updatePointer);
+        }
+
+        function handleInteraction(event) {
+            event.preventDefault();
+            updatePointer(event);
+            raycaster.setFromCamera(pointer, camera);
+            const intersects = raycaster.intersectObjects(nodes);
+            if (intersects.length > 0) {
+                const node = intersects[0].object;
+                for (let i = 0; i < (isMobile ? 8 : 15); i++) {
+                    const geometry = new THREE.BufferGeometry();
+                    const positions = new Float32Array(3);
+                    positions[0] = node.position.x + (Math.random() - 0.5) * (isMobile ? 2 : 3);
+                    positions[1] = node.position.y + (Math.random() - 0.5) * (isMobile ? 2 : 3);
+                    positions[2] = node.position.z + (Math.random() - 0.5) * (isMobile ? 2 : 3);
+                    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                    const particle = new THREE.Points(geometry, glowMaterial);
+                    particle.progress = 0;
+                    particle.velocity = new THREE.Vector3(
+                        (Math.random() - 0.5) * 0.07,
+                        (Math.random() - 0.5) * 0.07,
+                        (Math.random() - 0.5) * 0.07
+                    );
+                    scene.add(particle);
+                    glowParticles.push(particle);
+                }
+                const geometry = new THREE.BufferGeometry().setFromPoints([
+                    node.position,
+                    new THREE.Vector3(
+                        node.position.x + (Math.random() - 0.5) * 6,
+                        node.position.y + (Math.random() - 0.5) * 6,
+                        node.position.z + (Math.random() - 0.5) * 6
+                    )
+                ]);
+                const line = new THREE.Line(geometry, connectionMaterial);
+                scene.add(line);
+                setTimeout(() => {
+                    scene.remove(line);
+                }, 1000);
+            }
+        }
+
+        canvas.addEventListener(isMobile ? 'touchstart' : 'click', handleInteraction);
+
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+
+            time += isMobile ? 0.004 : 0.008;
+
+            camera.position.x = Math.sin(time * (isMobile ? 0.04 : 0.08)) * (isMobile ? 100 : 80);
+            camera.position.z = Math.cos(time * (isMobile ? 0.04 : 0.08)) * (isMobile ? 100 : 80);
+            camera.lookAt(0, 0, 0);
+
+            nodes.forEach((node, i) => {
+                node.material.opacity = node.baseOpacity + Math.sin(time * 2 + i * 0.1) * 0.15;
+                node.position.x += Math.sin(time + i) * node.distortion;
+                node.position.y += Math.cos(time + i) * node.distortion;
+            });
+
+            connections.forEach((line, i) => {
+                line.material.opacity = 0.3 + Math.sin(time * 1.5 + i * 0.05) * 0.1;
+            });
+
+            pulses.forEach((pulse, index) => {
+                pulse.progress += pulse.speed;
+                pulse.position.lerpVectors(pulse.startPos, pulse.endPos, pulse.progress);
+                pulse.material.opacity = 0.8 * (1 - pulse.progress);
+                if (pulse.progress >= 1) {
+                    scene.remove(pulse);
+                    pulses.splice(index, 1);
+                }
+            });
+
+            glowParticles.forEach((particle, index) => {
+                if (particle.progress !== undefined) {
+                    particle.progress += 0.02;
+                    particle.position.add(particle.velocity);
+                    particle.material.opacity = 0.7 * (1 - particle.progress);
+                    if (particle.progress >= 1) {
+                        scene.remove(particle);
+                        glowParticles.splice(index, 1);
+                    }
+                } else {
+                    particle.material.opacity = 0.7 + Math.sin(time * 2 + index * 0.1) * 0.2;
+                }
+            });
+
+            if (!isMobile) {
+                raycaster.setFromCamera(pointer, camera);
+                const intersects = raycaster.intersectObjects(nodes);
+                nodes.forEach(node => {
+                    node.material.opacity = node.baseOpacity;
+                });
+                intersects.forEach(intersect => {
+                    intersect.object.material.opacity = 1.0;
+                });
+            }
+
+            renderer.render(scene, camera);
+        }
+        console.log('Animation started'); // Debugging line
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        setInterval(() => {
+            const headings = document.querySelectorAll('h1, h2, .logo-text');
+            headings.forEach(heading => {
+                if (Math.random() < 0.1) {
+                    heading.style.animation = 'glitch 0.5s ease-in-out';
+                    setTimeout(() => {
+                        heading.style.animation = 'glow 2s ease-in-out infinite alternate';
+                    }, 500);
+                }
+            });
+        }, 5000);
+
+        // Unique Feature: Interactive Service Cards
+        document.querySelectorAll('.service-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.service-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                // Trigger neural network pulse effect
+                const node1 = nodes[Math.floor(Math.random() * nodes.length)];
+                const node2 = nodes[Math.floor(Math.random() * nodes.length)];
+                if (node1 !== node2) {
+                    createPulse(node1, node2);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
